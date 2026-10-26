@@ -4,72 +4,71 @@
 
 # À table !
 
-**Les goûts de chacun, et des idées de repas qui plaisent à toute la famille.**
+**Everyone's tastes, and meal ideas the whole family actually likes.**
 
-Une app familiale de planification des repas : chacun règle ses goûts, l'app
-propose des repas qui conviennent à tout le monde selon qui mange ce soir,
-puis construit la liste de courses.
+A family meal-planning app: each person sets their food tastes, the app suggests
+meals that work for everyone based on who's eating tonight, then builds the
+shopping list.
 
-[**→ Voir l'app en ligne**](https://a-taaaable.vercel.app) · PWA · application iOS (Capacitor + TestFlight)
+[**→ Live app**](https://a-taaaable.vercel.app) · PWA · iOS app (Capacitor + TestFlight)
 
 </div>
 
 ---
 
-## Aperçu
+## Preview
 
 <p align="center">
-  <img src="docs/screenshots/1-semaine.png"  width="19%" alt="Planning des repas" />
-  <img src="docs/screenshots/2-gouts.png"    width="19%" alt="Deck de goûts" />
-  <img src="docs/screenshots/4-repas.png"    width="19%" alt="Composer un repas" />
-  <img src="docs/screenshots/3-courses.png"  width="19%" alt="Liste de courses" />
-  <img src="docs/screenshots/5-recette.png"  width="19%" alt="Recette pas à pas" />
+  <img src="docs/screenshots/1-semaine.png"  width="19%" alt="Weekly meal plan" />
+  <img src="docs/screenshots/2-gouts.png"    width="19%" alt="Taste deck" />
+  <img src="docs/screenshots/4-repas.png"    width="19%" alt="Compose a meal" />
+  <img src="docs/screenshots/3-courses.png"  width="19%" alt="Shopping list" />
+  <img src="docs/screenshots/5-recette.png"  width="19%" alt="Step-by-step recipe" />
 </p>
 
-## Fonctionnalités
+## Features
 
-- 👨‍👩‍👧‍👦 **Famille / groupe** — plusieurs membres, chacun avec son profil et ses goûts, invitations par code.
-- 👍 **Deck de goûts** — on swipe les aliments (aime / moyen / n'aime pas / coup de cœur) ; interface façon cartes.
-- 🍽️ **Génération de repas** — on coche qui mange, l'app propose entrées / plats / desserts en priorisant ce qui plaît à **tout le monde**.
-- 🛒 **Liste de courses** — générée depuis les repas de la semaine, avec **estimation du prix par enseigne** et cases à cocher.
-- 👨‍🍳 **Mode cuisine** — recettes pas à pas, étapes cochables, un peu de gamification pour aller au bout.
-- 🥦 **Régimes** — sans gluten, sans lactose, végétarien, vegan, pescétarien… filtrent automatiquement les aliments.
-- 🔐 **Connexion** — e-mail ou **Sign in with Google / Apple** (natif iOS + web).
-- 📱 **Multi-plateforme** — PWA installable + application iOS native via Capacitor (coquille qui charge l'app hébergée).
-- 🖼️ **166 photos de plats** générées pour rendre le catalogue appétissant.
+- 👨‍👩‍👧‍👦 **Family / group** — multiple members, each with their own profile and tastes; invite by code.
+- 👍 **Taste deck** — swipe through foods (like / neutral / dislike / favorite) in a card-style UI.
+- 🍽️ **Meal generation** — pick who's eating, and the app suggests starters / mains / desserts, prioritizing what pleases **everyone**.
+- 🛒 **Shopping list** — built from the week's meals, with a **per-store price estimate** and checkable items.
+- 👨‍🍳 **Cooking mode** — step-by-step recipes with checkable steps and a bit of gamification to see it through.
+- 🥦 **Diets** — gluten-free, lactose-free, vegetarian, vegan, pescetarian… automatically filter the foods.
+- 🔐 **Auth** — email or **Sign in with Google / Apple** (native iOS + web).
+- 📱 **Cross-platform** — installable PWA + native iOS app via Capacitor (a shell that loads the hosted app).
+- 🖼️ **166 generated dish photos** to make the catalog appetizing.
 
 ## Stack
 
 | | |
 |---|---|
 | **Framework** | Next.js 16 (App Router, SSR) · React 19 |
-| **Style** | Tailwind CSS v4 · `motion` (animations) |
-| **Base de données** | Neon Postgres (serverless) |
-| **Auth social** | `@capgo/capacitor-social-login` + vérification des ID tokens côté serveur (`jose`, JWKS) |
-| **iOS** | Capacitor 8 (SPM) · build cloud Codemagic · TestFlight |
+| **Styling** | Tailwind CSS v4 · `motion` (animations) |
+| **Database** | Neon Postgres (serverless) |
+| **Social auth** | `@capgo/capacitor-social-login` + server-side ID-token verification (`jose`, JWKS) |
+| **iOS** | Capacitor 8 (SPM) · Codemagic cloud build · TestFlight |
 
-## Note d'architecture
+## Architecture note
 
-L'app est **SSR** (routes serveur sur Neon), donc la coquille iOS ne bundle pas un build statique :
-elle charge l'URL hébergée dans une WebView. Résultat : les changements d'UI sont **instantanés**
-côté natif (déploiement web), seuls les changements natifs (plugins, `Info.plist`, entitlements)
-demandent un nouveau build. Les ID tokens Google/Apple sont vérifiés par signature JWKS côté serveur
-(aucun client secret nécessaire).
+The app is **SSR** (server routes on Neon), so the iOS shell doesn't bundle a static build:
+it loads the hosted URL in a WebView. As a result, UI changes ship **instantly** on native
+(via the web deploy); only native changes (plugins, `Info.plist`, entitlements) need a new build.
+Google/Apple ID tokens are verified by JWKS signature on the server (no client secret required).
 
-## Développement
+## Development
 
 ```bash
 npm install
-cp .env.example .env.local   # colle ta DATABASE_URL Neon
+cp .env.example .env.local   # paste your Neon DATABASE_URL
 npm run dev
 ```
 
-Les tables sont créées automatiquement à la première requête.
+Tables are created automatically on the first request.
 
-## Licence
+## License
 
-© 2026 — Tous droits réservés.
+© 2026 — All rights reserved.
 
-Ce dépôt est **public à des fins de démonstration** (portfolio). Le code n'est **pas** sous licence
-open-source : pas d'autorisation de réutilisation, de redistribution ou de déploiement, et les
-contributions ne sont pas ouvertes.
+This repository is **public for demonstration purposes** (portfolio). The code is **not** released
+under an open-source license: no permission is granted to reuse, redistribute, or deploy it, and
+contributions are not open.
