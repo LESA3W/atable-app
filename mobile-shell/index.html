@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>À table</title>
+  <!--
+    Capacitor webDir fallback. The native shell (capacitor.config.ts -> server.url) loads the live
+    app at a-taaaable.vercel.app; this static page is only shown very briefly on launch or when the
+    device is offline. Keep it tiny and dependency-free.
+  -->
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #f26f1c;
+      color: #fff;
+      font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .wrap { padding: 24px; }
+    h1 { font-size: 30px; font-weight: 800; margin: 0 0 6px; }
+    p { margin: 0; opacity: 0.9; }
+    .spin {
+      margin: 22px auto 0;
+      width: 34px;
+      height: 34px;
+      border: 4px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hint { margin-top: 22px; font-size: 13px; opacity: 0.75; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>À table</h1>
+    <p>Connexion…</p>
+    <div class="spin"></div>
+    <p class="hint">Pas de connexion ? Vérifie ton réseau.</p>
+  </div>
+</body>
+</html>

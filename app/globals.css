@@ -1,0 +1,569 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   DESIGN TOKENS — single source of truth (playful / Duolingo-ish)
+   Reuse the existing orange + cream identity. No scattered hex.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --background: #fef5ee; /* warm cream, never pure white */
+  --foreground: #2b2a28; /* warm near-black, never #000 */
+  --primary: #f26f1c; /* vivid orange — CTAs, active tab */
+  --primary-dark: #c4530f; /* hard 3D shadow under primary */
+  --primary-soft: #ffe7d5; /* light orange wash (hover / fills) */
+  --muted: #8a94a6; /* slate-grey secondary text / labels */
+  --surface: #ffffff; /* card surface */
+  --card-border: #f4a24a; /* light-orange card border */
+
+  /* Neutral 3D (secondary buttons, inactive tabs) */
+  --neutral-border: #ece3d6;
+  --neutral-shadow: #d8cdbf;
+
+  /* Status (kept from the meal logic) */
+  --ok: #1e9e5c;
+  --warn: #f59e0b;
+  --bad: #db4b3f;
+
+  /* Reward accents — cooking-session points (goal-gradient "juice") */
+  --gold: #f5b921;
+  --gold-ink: #4a3000;
+
+  /* Person identity colors (avatars) */
+  --person-marc: #db4b3f;
+  --person-paul: #3e9bf4;
+  --person-louis: #1e9e5c;
+  --person-moi: #a93db0;
+
+  /* Radius scale */
+  --radius-btn: 16px;
+  --radius-card: 22px;
+  --radius-pill: 9999px;
+
+  /* Elevation */
+  --shadow-card: 0 2px 10px rgba(43, 42, 40, 0.06), 0 1px 3px rgba(43, 42, 40, 0.05);
+  --btn-offset: 4px; /* 3D hard-shadow depth */
+  /* Clearance above the floating nav: track its real geometry (bottom offset + bar height + a little
+     for the slightly-raised Repas disc) so content / the Repas footer sit just above it, not with a gap. */
+  --bottomnav-space: calc(max(2px, env(safe-area-inset-bottom) - 17px) + 64px);
+  /* Sticky header height — MUST equal the real rendered <header> height so in-page sticky bars
+     (preferences toolbar) and the header frost pin FLUSH under it, no gap. Measured on iPhone:
+     header = 128px with a 59px inset = 69px of chrome (logo 59 + py 6 + border 4). Was 76 (=+7px gap). */
+  --header-h: calc(69px + env(safe-area-inset-top));
+
+  /* Motion (strong custom easings — Emil Kowalski) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Chrome per route (set by AppChrome via <html data-chrome>). The orange header + bottom nav only
+   exist on the 4 menu homes; deep pages collapse the top offset to a slim back bar, and the Repas
+   wizard owns its own top + bottom. Desktop always keeps the full header (see the md query below). */
+[data-chrome="meal"] {
+  /* Repas has no orange header: start the wizard just below the notch (small breathing room), so the
+     short first steps don't leave a big empty gap. --bottomnav-space keeps the :root value. */
+  --header-h: calc(env(safe-area-inset-top) + 14px);
+}
+[data-chrome="bare"] {
+  --header-h: calc(env(safe-area-inset-top) + 56px); /* height of the slim back bar */
+  --bottomnav-space: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 768px) {
+  :root,
+  [data-chrome="meal"],
+  [data-chrome="bare"] {
+    --header-h: calc(79px + env(safe-area-inset-top)); /* desktop logo is larger (+~10px); header always shown */
+  }
+}
+
+/* Expose tokens to Tailwind utilities (bg-primary, text-muted, rounded-card…) */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-soft: var(--primary-soft);
+  --color-muted: var(--muted);
+  --color-surface: var(--surface);
+  --color-cardborder: var(--card-border);
+  --radius-btn: var(--radius-btn);
+  --radius-card: var(--radius-card);
+  --font-sans: var(--font-baloo), system-ui, sans-serif;
+}
+
+/* html also gets the cream background so the iOS safe-area / home-indicator strip is
+   cream (never the default white) when the web view runs edge-to-edge. */
+html {
+  background: var(--background);
+}
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-baloo), system-ui, sans-serif;
+}
+
+/* Native-app behavior (PWA): no blue tap highlight, no double-tap zoom (pinch
+   stays for accessibility), no rubber-band overscroll. */
+html,
+body {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  /* No accidental text selection when tapping buttons; no iOS long-press callout. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Kill the iOS long-press callout AND the selection magnifier (loupe) on every element
+   except real inputs — so a tap-then-hold never pops the loupe. `!important` so no
+   component style can silently re-enable selection (the JS selectstart guard in
+   RegisterSW is the belt-and-braces backup for the gesture CSS alone can miss). */
+*:not(input):not(textarea):not([contenteditable="true"]) {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+/* Keep real inputs selectable / editable. */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Safe-area helper for fixed bottom bars (home indicator / iPhone 15). */
+.safe-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+@layer base {
+  /* Tailwind v4 dropped the default pointer cursor on buttons. */
+  button:not(:disabled),
+  a[href],
+  [role="button"],
+  label,
+  summary {
+    cursor: pointer;
+  }
+
+  /* Visible focus for keyboard users (accessibility). */
+  :focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   COMPONENTS
+   ───────────────────────────────────────────────────────────── */
+@layer components {
+  /* 3D tactile button — solid face + hard offset shadow that presses in.
+     Only `transform` is animated; the shadow swap is an instant state change
+     (no reflow, no CLS). */
+  .btn-3d {
+    --btn-shadow: var(--primary-dark);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-btn);
+    font-weight: 800;
+    line-height: 1.1;
+    box-shadow: 0 var(--btn-offset) 0 var(--btn-shadow);
+    transition: transform 90ms var(--ease-out);
+    will-change: transform;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .btn-3d:active {
+    transform: translateY(var(--btn-offset));
+    box-shadow: 0 0 0 var(--btn-shadow);
+  }
+  .btn-3d:disabled {
+    opacity: 0.55;
+  }
+
+  .btn-primary {
+    --btn-shadow: var(--primary-dark);
+    background: var(--primary);
+    color: #fff;
+  }
+  .btn-neutral {
+    --btn-shadow: var(--neutral-shadow);
+    background: var(--surface);
+    color: var(--foreground);
+    border: 2px solid var(--neutral-border);
+  }
+
+  /* Nav buttons sitting on the orange header. */
+  .btn-on-orange {
+    --btn-shadow: #9a3f0c;
+    background: var(--primary-dark);
+    color: #fff;
+  }
+  .btn-on-orange-active {
+    --btn-shadow: var(--primary-dark);
+    background: #fff;
+    color: var(--primary);
+  }
+
+  /* Claymorphic card */
+  .clay-card {
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MOTION
+   ───────────────────────────────────────────────────────────── */
+
+/* Card mount-in (staggered via inline animation-delay) */
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.card-in {
+  animation: cardIn 320ms var(--ease-out) both;
+}
+
+/* Reward pop on key validations */
+@keyframes pop {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.pop {
+  animation: pop 260ms var(--ease-out) both;
+}
+
+/* Cart badge hops in sync with the header AnimatedCartIcon burst (translateY only, no squash,
+   same 1.15s x2 rhythm as the cart's one-shot bounce). */
+@keyframes qm-badge-hop {
+  0% { transform: translateY(0); }
+  15% { transform: translateY(-2px); }
+  45% { transform: translateY(-2px); }
+  68% { transform: translateY(0); }
+  82% { transform: translateY(-1px); }
+  100% { transform: translateY(0); }
+}
+.qm-badge-hop {
+  animation: qm-badge-hop 1.15s var(--ease-out) 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .qm-badge-hop {
+    animation: none;
+  }
+}
+
+/* Gentle "do this next" invite — brightness only, so it never fights the 3D button's
+   own transform/box-shadow (used on Continuer once a dish is fully checked). */
+@keyframes qm-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.13);
+  }
+}
+.qm-pulse {
+  animation: qm-pulse 1s var(--ease-out) infinite;
+}
+
+/* Selection sheet on the Repas page: rises + settles just above the bottom nav. */
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.sheet-in {
+  animation: sheetIn 260ms var(--ease-out) both;
+}
+
+/* Loading spinner: constant motion -> linear, fast so loading feels quick. */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 0.7s linear infinite;
+}
+
+/* Centered modal entrance: scale up from the middle (never from 0), fade in. */
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.modal-in {
+  animation: modalIn 220ms var(--ease-out) both;
+}
+
+/* Hide the scrollbar on in-app scroll areas (native-app feel), scrolling still works. */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+/* Page transition: each new route fades + rises in */
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-in {
+  /* `backwards`, not `both`: play the enter fade+rise, but do NOT retain the final
+     transform. A retained transform keyframe (even resolving to identity) keeps the
+     element a containing block, which traps every `position: fixed` descendant
+     (sticky action bar, modal pickers, overlays) inside the page box instead of the
+     viewport. With `backwards` the element reverts to `transform: none` once the run
+     ends, so fixed overlays anchor to the viewport as intended. */
+  animation: pageIn 200ms var(--ease-out) backwards;
+}
+
+/* Gate step change (choose -> create -> profile): snappier than a route change
+   since steps swap more often. Same fade+rise, `backwards` for the same reason. */
+.step-in {
+  animation: pageIn 170ms var(--ease-out) backwards;
+}
+
+/* Hide scrollbars on the wheel picker columns (still scrollable). */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Splash launch animation (more visible): big pop-in + gentle bob, title rises */
+@keyframes splashIn {
+  0% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  78% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes splashBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes splashTitle {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.splash-bob {
+  animation: splashBob 1.7s ease-in-out infinite;
+}
+.splash-logo {
+  animation: splashIn 750ms var(--ease-out) both;
+}
+.splash-title {
+  animation: splashTitle 500ms var(--ease-out) 350ms both;
+}
+
+/* "Démarrer la cuisine" hold-to-confirm fill — scaleX (GPU, no reflow) */
+@keyframes cookFillX {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.cook-fill {
+  transform-origin: left center;
+  animation: cookFillX 1.5s linear forwards;
+  will-change: transform;
+}
+
+@keyframes cookBounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(-12deg);
+  }
+}
+.cook-chef {
+  display: inline-block;
+  animation: cookBounce 0.55s ease-in-out infinite;
+}
+
+/* Mascot whirl while holding: slow at first, then faster and faster (strong ease-in) as the
+   1.5s hold fills — it "spins up" and is whirling at full speed right at the launch. */
+@keyframes cookSpin {
+  to {
+    transform: rotate(1440deg);
+  }
+}
+.cook-spin {
+  display: inline-block;
+  animation: cookSpin 1.5s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+  will-change: transform;
+}
+
+@keyframes cookFloat {
+  0% {
+    transform: translateY(10px) scale(0.7);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-36px) scale(1.15);
+    opacity: 0;
+  }
+}
+.cook-float {
+  position: absolute;
+  bottom: 0.35rem;
+  font-size: 1.1rem;
+  animation: cookFloat 1.1s ease-in infinite;
+}
+
+/* Visual-only "hold me" hint on the Démarrer button: a faint fill previews the real
+   hold-fill sweeping in, then fades — teaching the gesture without any text. */
+@keyframes cookHint {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.22;
+  }
+  55% {
+    transform: scaleX(1);
+    opacity: 0.22;
+  }
+  72%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+.cook-hint {
+  transform-origin: left center;
+  animation: cookHint 2.4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Respect reduced motion: drop decorative movement, keep functional feedback
+   (button press + the cook progress fill stay). */
+@media (prefers-reduced-motion: reduce) {
+  .card-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .pop {
+    animation: none;
+  }
+  .cook-chef {
+    animation: none;
+  }
+  .cook-spin {
+    animation: none;
+  }
+  .cook-float {
+    display: none;
+  }
+  .cook-hint {
+    animation: none;
+    display: none;
+  }
+  .qm-pulse {
+    animation: none;
+  }
+  .page-in,
+  .step-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .splash-bob {
+    animation: none;
+  }
+  .splash-logo,
+  .splash-title {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Printing: A4 portrait posters (the /share page), clean white. */
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+@media print {
+  body {
+    background: #ffffff;
+  }
+}

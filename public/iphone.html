@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Same favicon as the app: this preview page had none, so its browser tab showed the blank
+       default globe. Point at the public icon so the tab matches the app. -->
+  <link rel="icon" type="image/png" href="/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <title>À table — aperçu iPhone 15 Pro</title>
+  <!-- Design tool (not part of the app): shows the live app inside an iPhone 15 Pro frame with
+       simulated safe-areas, so the layout can be judged on a real device shape from a desktop.
+       Same-origin iframe, so we can inject the safe-area insets that headless/desktop lack. -->
+  <style>
+    * { margin: 0; box-sizing: border-box; }
+    body {
+      background: #e6e2dc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 32px 0;
+      font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+    }
+    .bar { display: flex; align-items: center; gap: 10px; color: #57534e; font-size: 13px; font-weight: 700; }
+    select, button {
+      font: inherit; font-size: 12px; font-weight: 700; color: #57534e;
+      border: 1px solid #cbc7c0; background: #fff; border-radius: 8px; padding: 5px 8px; cursor: pointer;
+    }
+    .device {
+      position: relative; background: #0a0a0c; border-radius: 60px; padding: 13px;
+      box-shadow: 0 40px 90px rgba(0,0,0,.42), inset 0 0 0 2px #34343a;
+    }
+    .screen { position: relative; border-radius: 48px; overflow: hidden; background: #000; }
+    iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .island {
+      position: absolute; top: 13px; left: 50%; transform: translateX(-50%);
+      width: 122px; height: 35px; background: #000; border-radius: 20px; z-index: 3; pointer-events: none;
+    }
+    .home {
+      position: absolute; bottom: 9px; left: 50%; transform: translateX(-50%);
+      width: 138px; height: 5px; background: rgba(0,0,0,.28); border-radius: 3px; z-index: 3; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span>À table — aperçu live</span>
+    <select id="model">
+      <option value="393x852x59x34" selected>iPhone 15 Pro (393×852)</option>
+      <option value="430x932x59x34">iPhone 15 Pro Max (430×932)</option>
+      <option value="393x852x59x34b">iPhone 15 (393×852)</option>
+    </select>
+    <button id="reload">↻ Recharger</button>
+  </div>
+
+  <div class="device">
+    <div class="screen" id="screen">
+      <iframe id="app" src="/" allow="geolocation"></iframe>
+      <div class="island"></div>
+      <div class="home"></div>
+    </div>
+  </div>
+
+  <script>
+    var screen = document.getElementById("screen");
+    var frame = document.getElementById("app");
+
+    function safeCss(top, bottom) {
+      return (
+        ':root{--header-h:calc(69px + ' + top + 'px)!important;' +
+        '--bottomnav-space:calc(max(2px, ' + bottom + 'px - 17px) + 64px)!important;}' +
+        '[data-chrome="meal"]{--header-h:calc(' + top + 'px + 14px)!important;}' +
+        '[data-chrome="bare"]{--header-h:calc(' + top + 'px + 56px)!important;}' +
+        'header{padding-top:' + top + 'px!important;}' +
+        'nav[class*="fixed"]{bottom:max(2px, calc(' + bottom + 'px - 17px))!important;}'
+      );
+    }
+
+    // current insets (updated by the model selector)
+    var TOP = 59, BOTTOM = 34;
+
+    function applySafe() {
+      try {
+        var doc = frame.contentDocument;
+        if (!doc || !doc.head) return;
+        var prev = doc.getElementById("__ios_safe");
+        if (prev) prev.remove();
+        var s = doc.createElement("style");
+        s.id = "__ios_safe";
+        s.textContent = safeCss(TOP, BOTTOM);
+        doc.head.appendChild(s);
+      } catch (e) { /* cross-origin would throw; same-origin so fine */ }
+    }
+    frame.addEventListener("load", applySafe);
+
+    document.getElementById("model").addEventListener("change", function (e) {
+      var p = e.target.value.split("x");
+      var w = p[0], h = p[1];
+      TOP = parseInt(p[2], 10); BOTTOM = parseInt(p[3], 10);
+      screen.style.width = w + "px";
+      screen.style.height = h + "px";
+      applySafe();
+    });
+    document.getElementById("reload").addEventListener("click", function () {
+      frame.contentWindow.location.reload();
+    });
+
+    // init size
+    screen.style.width = "393px";
+    screen.style.height = "852px";
+  </script>
+</body>
+</html>

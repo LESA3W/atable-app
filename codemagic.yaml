@@ -1,0 +1,71 @@
+# Codemagic CI/CD — build iOS de "À table" (coquille Capacitor par-dessus l'app web Vercel).
+# Permet de builder + signer l'app iOS SANS Mac (Paul est sur Windows) et de l'envoyer sur TestFlight.
+#
+# Signature = AUTOMATIQUE (Codemagic cree/recupere le certificat + le profil via la cle ASC).
+# A configurer UNE FOIS dans Codemagic (compte de Paul) avant le 1er build :
+#   1. Connecter le repo GitHub LESA3W/quon-mange.
+#   2. Team settings > Integrations > App Store Connect : ajouter la cle API (nom = "Main" ci-dessous).
+#   3. Creer la fiche app dans App Store Connect (bundle id com.weasel.atable).
+#   4. Ajouter un groupe de variables "ios_signing" contenant CERTIFICATE_PRIVATE_KEY (SECURE) —
+#      la cle privee generee localement (ssh-keygen), collee telle quelle. Codemagic NE la genere PAS.
+#   L'integration "Main" fournit deja l'auth ASC (KEY_IDENTIFIER / ISSUER_ID / PRIVATE_KEY).
+
+workflows:
+  ios-atable:
+    name: À table iOS (TestFlight)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    # MANUAL builds only. There is intentionally NO `triggering` block, so Codemagic never auto-builds
+    # on push — a build runs ONLY when you click "Start new build" in the Codemagic UI. This fully
+    # protects the free-tier build minutes: nothing burns unless you decide to. (Web changes are
+    # already live via the Vercel URL, so they never need a native rebuild anyway.) There is also no
+    # `when`/`changeset` filter, so every manual build you start runs in full (never silently skipped).
+    integrations:
+      app_store_connect: Main         # nom de l'integration ASC API creee dans Codemagic
+    environment:
+      groups:
+        - ios_signing                 # DOIT contenir CERTIFICATE_PRIVATE_KEY (ajoute-le dans Codemagic UI, secure)
+      vars:
+        BUNDLE_ID: "com.weasel.atable"
+        APP_STORE_APP_ID: "6789919604"   # Apple ID de la fiche App Store Connect (pour incrementer le build number)
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install JS dependencies
+        script: npm ci
+      - name: Capacitor sync (regenere la config ios + les assets web)
+        script: npx cap sync ios
+      - name: Set up keychain
+        script: keychain initialize
+      - name: Fetch / create signing files (certificat + profil App Store)
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+      - name: Add signing certificate to keychain
+        script: keychain add-certificates
+      - name: Set up code signing on the Xcode project
+        script: xcode-project use-profiles
+      - name: Increment build number (unique per TestFlight upload)
+        script: |
+          NEW=$(($(app-store-connect get-latest-build-number "$APP_STORE_APP_ID" 2>/dev/null || echo 0) + 1))
+          echo "Build number -> $NEW"
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9][0-9]*;/CURRENT_PROJECT_VERSION = $NEW;/g" "$CM_BUILD_DIR/$XCODE_PROJECT/project.pbxproj"
+      - name: Build the IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Upload vers App Store Connect uniquement. Le testing INTERNE (toi + famille) se gere dans
+        # l'onglet TestFlight d'ASC, SANS review Apple ni infos de test. On NE soumet PAS auto pour
+        # l'EXTERNAL testing (qui exige une beta review + Feedback Email + contact review).
+        # -> passer a `true` + ajouter `beta_groups: [<groupe externe>]` le jour ou on veut l'externe.
+        submit_to_testflight: false
