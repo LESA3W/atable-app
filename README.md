@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="public/logo.png" alt="À table" width="120" />
+<img src="public/logo.png" alt="Atable" width="120" />
 
-# À table !
+# Atable
 
 **Everyone's tastes, and meal ideas the whole family actually likes.**
 
@@ -10,7 +10,17 @@ A family meal-planning app: each person sets their food tastes, the app suggests
 meals that work for everyone based on who's eating tonight, then builds the
 shopping list.
 
-[**→ Live app**](https://a-taaaable.vercel.app) · PWA · iOS app (Capacitor + TestFlight)
+<p>
+  <a href="https://apps.apple.com/fr/app/ataaable/id6789919604">
+    <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store" height="56" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://a-taaaable.vercel.app">
+    <img src="https://img.shields.io/badge/Try%20the-Web%20App-F26F1C?style=for-the-badge&logo=vercel&logoColor=white" alt="Try the Web App" height="56" />
+  </a>
+</p>
+
+**📱 Live on the App Store** · 🌐 or try it instantly in your browser (PWA) — no install.
 
 </div>
 
@@ -46,7 +56,7 @@ shopping list.
 | **Styling** | Tailwind CSS v4 · `motion` (animations) |
 | **Database** | Neon Postgres (serverless) |
 | **Social auth** | `@capgo/capacitor-social-login` + server-side ID-token verification (`jose`, JWKS) |
-| **iOS** | Capacitor 8 (SPM) · Codemagic cloud build · TestFlight |
+| **iOS** | Capacitor 8 (SPM) · Codemagic cloud build · [live on the App Store](https://apps.apple.com/fr/app/ataaable/id6789919604) |
 
 ## Architecture note
 
