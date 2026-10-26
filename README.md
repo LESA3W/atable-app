@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/logo.png" alt="Atable" width="120" />
+<img src="public/icon-512.png" alt="Atable" width="120" style="border-radius:22px" />
 
 # Atable
 
